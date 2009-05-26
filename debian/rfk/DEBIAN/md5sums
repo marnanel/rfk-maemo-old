@@ -1,0 +1,11 @@
+ae49e00df16627f86b7422d08b95546e  usr/bin/rfk
+dfacf4bd6c9d172806bceb7429c3f048  usr/share/applications/hildon/rfk.desktop
+6a2c985bb5e7c7baee6b7aea59753f62  usr/share/doc/rfk/README.Debian
+6590e0e7968e1524f2620bb21b87a00c  usr/share/doc/rfk/copyright
+d8b365a9ec92209ed203432b592c58f7  usr/share/doc/rfk/changelog.Debian.gz
+8099b288f87bab7b4d65e7991f21b0f9  usr/share/icons/64x64/hildon/rfk.png/rfk.png
+a5801d6fdc65f61729492d46c9e93c53  usr/share/pixmaps/rfk-love.png
+c62dd0fd8f1f201bd77201b810efbd4b  usr/share/pixmaps/rfk.xpm
+c3c0256b5f2ec5c27752704c8387804c  usr/share/pixmaps/rfk-dimmed.xpm
+16d6cf6483896425691a0fd3965d4258  usr/share/pixmaps/rfk-robot.png
+67b9dc8e9e620bb2478f633c5cf57bcc  usr/share/pixmaps/rfk-kitten.png

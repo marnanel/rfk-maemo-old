@@ -1,0 +1,14 @@
+Source: rfk
+Section: unknown
+Priority: extra
+Maintainer: Thomas Thurman <tthurman@gnome.org>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+
+Package: rfk
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: robot finds kitten for maemo
+  robotfindskitten is a "Zen simulation," originally written
+  by Leonard Richardson for DOS.  The user must find a kitten
+  in a field of random entities.
