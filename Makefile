@@ -8,7 +8,7 @@ rfk: rfk.c
 clean:
 	rm -f rfk
 
-install: rfk rfk.xpm rfk.desktop
+install: rfk rfk.png rfk-robot.png rfk-love.png rfk-kitten.png rfk.desktop
 	install -d ${DESTDIR}/usr/bin
 	install rfk ${DESTDIR}/usr/bin
 	install -d ${DESTDIR}/usr/share/applications/hildon
