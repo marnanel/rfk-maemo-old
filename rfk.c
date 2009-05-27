@@ -269,7 +269,7 @@ static char* messages[] =
     "It's an autographed copy of \"Secondary Colors,\" by Bob Ross.",
     "It is a marzipan dreadnought that appears to have melted and stuck.",
     "It's a DVD of \"Crouching Monkey, Hidden Kitten\", region encoded for the moon.",
-    "It's Kieran Hervold.  Damn dyslexia!"
+    "It's Kieran Hervold.  Damn dyslexia!",
     "A non-descript box of crackers.",
     "Carbonated Water, High Fructose Corn Syrup, Color, Phosphoric Acid, Flavors, Caffeine.",
     "\"Move along! Nothing to see here!\"",
@@ -475,9 +475,9 @@ ending_animation_step (gpointer data)
 static void
 ending_animation ()
 {
-  robot_pic = gdk_pixbuf_new_from_file ("/usr/share/pixmaps/rfk-robot.png", NULL);
-  love_pic = gdk_pixbuf_new_from_file ("/usr/share/pixmaps/rfk-love.png", NULL);
-  kitten_pic = gdk_pixbuf_new_from_file ("/usr/share/pixmaps/rfk-kitten.png", NULL);
+  robot_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-robot.png", NULL);
+  love_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-love.png", NULL);
+  kitten_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-kitten.png", NULL);
   animation_area =  gtk_drawing_area_new ();
 
   gtk_container_remove (GTK_CONTAINER (window), GTK_WIDGET (table));
@@ -596,6 +596,7 @@ main (gint argc,
   int x, y;
 
   gtk_init (&argc, &argv);
+  g_set_application_name ("robot finds kitten");
   srandom (time(0));
 
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);

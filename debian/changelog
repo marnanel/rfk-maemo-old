@@ -1,3 +1,11 @@
+rfk (1.20-1) unstable; urgency=low
+
+  * Fix icon
+  * Fix one broken non-kitten item
+  * All files are installed to the same directory
+
+ -- Thomas Thurman <tthurman@gnome.org>  Tue, 27 May 2009 21:33:32 -0400
+
 rfk (1.10-1) unstable; urgency=low
 
   * Add keypresses
