@@ -2,7 +2,7 @@
 catalogues = extras-devel
 package   = rfk
 
-[extras]
+[extras-devel]
 name = maemo Extras-devel
 uri = http://repository.maemo.org/extras-devel/
 components = free non-free
