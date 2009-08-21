@@ -632,11 +632,11 @@ main (gint argc,
   int x, y;
 
   gtk_init (&argc, &argv);
-  g_set_application_name ("robot finds kitten");
+  g_set_application_name ("robotfindskitten");
   srandom (time(0));
 
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-  gtk_window_set_title (GTK_WINDOW (window), "robot finds kitten");
+  gtk_window_set_title (GTK_WINDOW (window), "robotfindskitten");
   gtk_widget_modify_bg (window, GTK_STATE_NORMAL, &black);
   g_signal_connect (G_OBJECT (window), "button-press-event", G_CALLBACK (on_window_clicked), NULL);
   g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (on_key_pressed), NULL);
