@@ -7,5 +7,5 @@ Comment=robot finds kitten
 Exec=/usr/bin/rfk
 Icon=rfk
 X-Icon-path=/usr/share/pixmaps/
-
-
+MimeType=text/x-rfk-nki
+X-Osso-Service=org.robotfindskitten

@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.robotfindskitten
+Exec=/usr/bin/rfk
+
