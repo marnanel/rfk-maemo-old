@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <glib.h>
 #include <hildon/hildon.h>
+#include <math.h>
 
 #define ARENA_WIDTH 25
 #define ARENA_HEIGHT 12
@@ -493,17 +494,38 @@ ending_animation ()
 /* Moving the robot.  Way to go, robot!                         */
 /****************************************************************/
 
-void
-move_robot (int dx, int dy)
+typedef struct {
+  guint gdk_key;
+  gchar vi_key; /* or nethack equivalent */
+  guint8 move_x;
+  guint8 move_y;
+} direction;
+
+direction directions[] = {
+  { GDK_Home,      'y', -1, -1 },
+  { GDK_Left,      'h', -1,  0 },
+  { GDK_End,       'b', -1,  1 },
+  { GDK_Down,      'j',  0,  1 },
+  { GDK_Page_Down, 'n',  1,  1 },
+  { GDK_Right,     'l',  1,  0 },
+  { GDK_Page_Up,   'u',  1, -1 },
+  { GDK_Up,        'k',  0, -1 }
+};
+
+gboolean
+move_robot (guint8 whichway)
 {
   GtkWidget *new_space;
+  gint8 dx = directions[whichway].move_x;
+  gint8 dy = directions[whichway].move_y;
+
   const char *found;
 
   if (robot_x+dx<0 ||
       robot_y+dy<0 ||
       robot_x+dx>=ARENA_WIDTH ||
       robot_y+dy>=ARENA_HEIGHT)
-    return;
+    return TRUE;
 
   new_space = arena[robot_x+dx][robot_y+dy];
   found = g_object_get_data (G_OBJECT (new_space), "examine");
@@ -516,9 +538,13 @@ move_robot (int dx, int dy)
 	{
 	  ending_animation ();
 	}
+
+      return TRUE;
     }
   else
     {
+      /* just an ordinary move into an empty space */
+
       g_object_ref (new_space);
 
       gtk_container_remove (GTK_CONTAINER (table), robot);
@@ -528,6 +554,8 @@ move_robot (int dx, int dy)
       place_in_arena_at_xy (robot, robot_x+dx, robot_y+dy);
 
       g_object_unref (new_space);
+
+      return FALSE;
     }
 }
 
@@ -540,29 +568,19 @@ on_window_clicked (GtkWidget      *widget,
 		   GdkEventButton *event,
 		   gpointer        user_data)
 {
+  /** Centre point of robot's representation on screen */
   int rx, ry;
-  gboolean w1, w2;
+  double angle;
 
   rx = (robot->allocation.x+robot->allocation.width/2);
   ry = (robot->allocation.y+robot->allocation.height/2);
 
-  w1 = (event->x - rx) > (event->y - ry);
-  w2 = (rx - event->x) > (event->y - ry);
-	
-  if (w1)
-    {
-      if (w2)
-	move_robot (0, -1);
-      else
-	move_robot (1, 0);
-    }
-  else
-    {
-      if (w2)
-	move_robot (-1, 0);
-      else
-	move_robot (0, 1);
-    }
+  angle = atan2(event->x - rx,
+		event->y - ry) +
+    M_PI +
+    M_PI/8;
+
+  move_robot (((int) (angle / (M_PI/4)))-1);
 
   return TRUE;
 }
@@ -572,15 +590,33 @@ on_key_pressed (GtkWidget      *widget,
 		GdkEventKey    *event,
 		gpointer        user_data)
 {
+  gint i;
+  guint keyval = event->keyval;
 
-  switch (event->keyval) {
+  if (keyval>='A' && keyval<='Z')
+    {
+      keyval += ('a'-'A');
+    }
 
-  case GDK_Up:    case 'k': move_robot ( 0, -1); break;
-  case GDK_Down:  case 'j': move_robot ( 0,  1); break;
-  case GDK_Left:  case 'h': move_robot (-1,  0); break;
-  case GDK_Right: case 'l': move_robot ( 1,  0); break;
-
-  }
+  for (i=0; i<G_N_ELEMENTS(directions); i++)
+    {
+      if (keyval==directions[i].gdk_key ||
+	  keyval==directions[i].vi_key)
+	{
+	  if (event->state & GDK_SHIFT_MASK)
+	    {
+	      while (!move_robot (i))
+		{
+		  /* keep going, robot! */
+		}
+	    }
+	  else
+	    {
+	      move_robot (i);
+	    }
+	  return FALSE;
+	}
+    }
 
   return FALSE;
 }
