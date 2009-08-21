@@ -13,6 +13,8 @@ install: rfk rfk.png rfk-robot.png rfk-love.png rfk-kitten.png rfk.desktop
 	install rfk ${DESTDIR}/usr/bin
 	install -d ${DESTDIR}/usr/share/applications/hildon
 	install rfk.desktop ${DESTDIR}/usr/share/applications/hildon
+	install -d ${DESTDIR}/usr/share/dbus-1/services
+	install org.robotfindskitten.service ${DESTDIR}/usr/share/dbus-1/services
 	install -d ${DESTDIR}/usr/share/pixmaps
 	install rfk.png ${DESTDIR}/usr/share/pixmaps
 	install -d ${DESTDIR}/usr/share/rfk
