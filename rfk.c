@@ -32,7 +32,7 @@ GSList *nki = NULL;
 guint nki_count = 0;
 
 GtkWidget *arena[ARENA_WIDTH][ARENA_HEIGHT];
-GtkWidget *table, *window, *robot, *kitten;
+GtkWidget *intro, *table, *window, *robot, *kitten;
 int robot_x, robot_y;
 gboolean *used = NULL;
 
@@ -186,6 +186,14 @@ ensure_messages_loaded (void)
   used = g_malloc0 (nki_count);
 }
 
+void
+load_images (void)
+{
+  robot_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-robot.png", NULL);
+  love_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-love.png", NULL);
+  kitten_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-kitten.png", NULL);
+}
+
 /****************************************************************/
 /* The ending animation.                                        */
 /****************************************************************/
@@ -279,9 +287,6 @@ ending_animation_step (gpointer data)
 static void
 ending_animation ()
 {
-  robot_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-robot.png", NULL);
-  love_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-love.png", NULL);
-  kitten_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-kitten.png", NULL);
   animation_area =  gtk_drawing_area_new ();
 
   gtk_container_remove (GTK_CONTAINER (window), GTK_WIDGET (table));
@@ -423,30 +428,27 @@ on_key_pressed (GtkWidget      *widget,
   return FALSE;
 }
 
-/****************************************************************/
-/* Let's kick the whole thing off...                            */
-/****************************************************************/
-
-int
-main (gint argc,
-      gchar **argv)
+void
+create_window (void)
 {
-  int x, y;
-
-  gtk_init (&argc, &argv);
-  g_set_application_name ("robotfindskitten");
-  srandom (time(0));
-
-  ensure_messages_loaded ();
-
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title (GTK_WINDOW (window), "robotfindskitten");
   gtk_widget_modify_bg (window, GTK_STATE_NORMAL, &black);
+}
+
+void
+set_up_game (void)
+{
+  guint x, y;
+
   g_signal_connect (G_OBJECT (window), "button-press-event", G_CALLBACK (on_window_clicked), NULL);
   g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (on_key_pressed), NULL);
   g_signal_connect (G_OBJECT (window), "delete_event", G_CALLBACK (gtk_main_quit), NULL);
+  gdk_window_set_events (GTK_WIDGET (window)->window,
+			 gdk_window_get_events(GTK_WIDGET (window)->window) | GDK_BUTTON_PRESS_MASK);
 	
   table = gtk_table_new (ARENA_HEIGHT, ARENA_WIDTH, TRUE);
+  gtk_container_remove (GTK_CONTAINER (window), GTK_WIDGET (intro));
   gtk_container_add (GTK_CONTAINER (window), GTK_WIDGET (table));
 
   robot = gtk_label_new ("#");
@@ -472,12 +474,93 @@ main (gint argc,
 	place_in_arena_at_xy (gtk_label_new (NULL), x, y);
 
   gtk_widget_show_all (window);
+}
 
-  gdk_window_set_events (GTK_WIDGET (window)->window,
-			 gdk_window_get_events(GTK_WIDGET (window)->window) | GDK_BUTTON_PRESS_MASK);
+void
+get_help (gpointer button, gpointer data)
+{
+  show_message ("Not yet implemented.");
+}
 
-	
-  show_message (explanation);
+void
+play_game (gpointer button, gpointer data)
+{
+  set_up_game ();
+}
+
+void
+show_intro (void)
+{
+  GtkWidget *vbox = gtk_vbox_new (FALSE, 0);
+  GtkWidget *hbox2 = gtk_hbox_new (TRUE, 0);
+  GtkWidget *explain = NULL, *help_button, *play_button;
+
+  GKeyFile *desktop = g_key_file_new ();
+  gchar *version;
+
+  if (g_key_file_load_from_file (desktop,
+				 "/usr/share/applications/hildon/rfk.desktop",
+				 G_KEY_FILE_NONE,
+				 NULL))
+    {
+      version = g_strdup_printf("v%s.%d",
+				g_key_file_get_value (desktop, "Desktop Entry", "Version", NULL),
+				nki_count);
+      g_key_file_free (desktop);
+    }
+  else
+    {
+      version = g_strdup("");
+    }
+
+  help_button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_FINGER_HEIGHT,
+					     HILDON_BUTTON_ARRANGEMENT_HORIZONTAL,
+					     "Help", NULL);
+  g_signal_connect (help_button, "clicked", G_CALLBACK (get_help), NULL);
+
+  play_button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_FINGER_HEIGHT,
+					     HILDON_BUTTON_ARRANGEMENT_HORIZONTAL,
+					     "Play", NULL);
+  g_signal_connect (play_button, "clicked", G_CALLBACK (play_game), NULL);
+
+  gtk_box_pack_end (hbox2, play_button, TRUE, TRUE, 0);
+  gtk_box_pack_end (hbox2, help_button, TRUE, TRUE, 0);
+
+  explain = gtk_label_new (explanation);
+  gtk_label_set_line_wrap (explain, TRUE);
+
+  gtk_box_pack_end (vbox, hbox2, FALSE, FALSE, 0);
+  gtk_box_pack_end (vbox, explain, TRUE, TRUE, 0);
+  gtk_box_pack_end (vbox, gtk_label_new (version), FALSE, FALSE, 0);
+
+  g_free (version);
+
+  intro = gtk_hbox_new (FALSE, 0);
+
+  gtk_box_pack_end (intro, vbox, TRUE, TRUE, 0);
+  gtk_box_pack_end (intro, gtk_image_new_from_pixbuf (robot_pic), FALSE, FALSE, 0);
+  gtk_container_add (GTK_CONTAINER (window), GTK_WIDGET (intro));
+
+  gtk_widget_show_all (window);
+}
+
+/****************************************************************/
+/* Let's kick the whole thing off...                            */
+/****************************************************************/
+
+int
+main (gint argc,
+      gchar **argv)
+{
+  gtk_init (&argc, &argv);
+  g_set_application_name ("robotfindskitten");
+  srandom (time(0));
+
+  ensure_messages_loaded ();
+  load_images ();
+
+  create_window ();
+  show_intro ();
 
   gtk_main ();
 
