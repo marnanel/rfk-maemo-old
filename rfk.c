@@ -158,7 +158,10 @@ ensure_messages_loaded (void)
   while (!feof (nki_file))
     {
       char newline;
-      fscanf (nki_file, "%a[^\n]%c", &line, &newline);
+      if (fscanf (nki_file, "%a[^\n]%c", &line, &newline) == EOF)
+	{
+	  break;
+	}
 
       if (strcmp(line, "")==0)
 	{
@@ -377,10 +380,9 @@ on_window_clicked (GtkWidget      *widget,
 
   angle = atan2(event->x - rx,
 		event->y - ry) +
-    M_PI +
-    M_PI/8;
+    M_PI * (9/8);
 
-  move_robot (((int) (angle / (M_PI/4)))-1);
+  move_robot (((int) (angle / (M_PI/4))) % 8);
 
   return TRUE;
 }
