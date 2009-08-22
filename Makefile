@@ -21,3 +21,4 @@ install: rfk rfk.png rfk-robot.png rfk-love.png rfk-kitten.png rfk.desktop
 	install rfk-robot.png ${DESTDIR}/usr/share/rfk
 	install rfk-love.png ${DESTDIR}/usr/share/rfk
 	install rfk-kitten.png ${DESTDIR}/usr/share/rfk
+	install non-kitten-items.rfk ${DESTDIR}/usr/share/rfk
