@@ -3,7 +3,7 @@
 all: rfk
 
 rfk: rfk.c
-	gcc -Wall -g rfk.c -o rfk `pkg-config --cflags --libs gtk+-2.0` `pkg-config hildon-1 --cflags --libs`
+	gcc -Wall -g rfk.c -o rfk `pkg-config --cflags --libs gtk+-2.0 hildon-1 dbus-glib-1 dbus-1`
 
 clean:
 	rm -f rfk
@@ -22,3 +22,4 @@ install: rfk rfk.png rfk-robot.png rfk-love.png rfk-kitten.png rfk.desktop
 	install rfk-love.png ${DESTDIR}/usr/share/rfk
 	install rfk-kitten.png ${DESTDIR}/usr/share/rfk
 	install non-kitten-items.rfk ${DESTDIR}/usr/share/rfk
+	install help.html ${DESTDIR}/usr/share/rfk

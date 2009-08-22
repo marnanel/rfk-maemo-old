@@ -3,9 +3,10 @@
  *  ported to maemo by Thomas Thurman, 2009
  *  suggestions welcome
  *  Compile with:
- *  gcc -Wall -g rfk.c -o rfk `pkg-config --cflags --libs gtk+-2.0 hildon-1`
+ *  gcc -Wall -g rfk.c -o rfk `pkg-config --cflags --libs gtk+-2.0 hildon-1 dbus-glib-1 dbus-1`
  */
 
+#include <dbus/dbus-glib.h>
 #include <gtk/gtk.h>
 #include <stdlib.h>
 #include <glib.h>
@@ -120,7 +121,8 @@ show_message (const char *message)
 {
   HildonNote* note = HILDON_NOTE
     (hildon_note_new_information (GTK_WINDOW (window),
-				  message));
+				  message?message:
+				  "Some message was supposed to be here."));
   gtk_dialog_run (GTK_DIALOG (note));
   gtk_widget_destroy (GTK_WIDGET (note));
 }
@@ -467,10 +469,41 @@ set_up_game (void)
   gtk_widget_show_all (window);
 }
 
-void
+/****************************************************************/
+/* Online help.                                                 */
+/****************************************************************/
+gboolean
 get_help (gpointer button, gpointer data)
 {
-  show_message ("Not yet implemented.");
+  DBusGConnection *connection;
+  GError *error = NULL;
+  DBusGProxy *proxy;
+
+  connection = dbus_g_bus_get (DBUS_BUS_SESSION,
+                               &error);
+  if (connection == NULL)
+    {
+      show_message (error->message);
+      g_error_free (error);
+      return FALSE;
+    }
+
+  proxy = dbus_g_proxy_new_for_name (connection,
+                                     "com.nokia.osso_browser",
+                                     "/com/nokia/osso_browser/request",
+                                     "com.nokia.osso_browser");
+
+  error = NULL;
+  if (!dbus_g_proxy_call (proxy, "load_url", &error,
+			  G_TYPE_STRING, "/usr/share/rfk/help.html",
+			  G_TYPE_INVALID,
+			  G_TYPE_INVALID))
+    {
+      show_message (error->message);
+      g_error_free (error);
+      return FALSE;
+    }
+  return FALSE;
 }
 
 void
