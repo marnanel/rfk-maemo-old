@@ -19,15 +19,6 @@
 
 const int amount_of_random_stuff = 15;
 
-const char *explanation =
-  "In this game, you are robot (#). "
-  "Your job is to find kitten. This task is complicated "
-  "by the existence of various things which are not kitten. "
-  "Robot must touch items to determine if they are kitten or "
-  "not. The game ends when robotfindskitten. You may move "
-  "robot about by tapping on any side of robot, or with the "
-  "cursor keys.";
-
 GSList *nki = NULL;
 guint nki_count = 0;
 
@@ -491,10 +482,17 @@ play_game (gpointer button, gpointer data)
 void
 show_intro (void)
 {
-  GtkWidget *vbox = gtk_vbox_new (FALSE, 0);
-  GtkWidget *hbox2 = gtk_hbox_new (TRUE, 0);
+  GtkWidget *middle = gtk_hbox_new (FALSE, 0);
+  GtkWidget *buttons = gtk_hbox_new (TRUE, 0);
   GtkWidget *explain = NULL, *help_button, *play_button;
-
+  const char *explanation =
+    "In this game, you are robot (#). "
+    "Your job is to find kitten. This task is complicated "
+    "by the existence of various things which are not kitten. "
+    "Robot must touch items to determine if they are kitten or "
+    "not. The game ends when robotfindskitten. You may move "
+    "robot about by tapping on any side of robot, or with the "
+    "arrow keys.";
   GKeyFile *desktop = g_key_file_new ();
   gchar *version;
 
@@ -513,32 +511,32 @@ show_intro (void)
       version = g_strdup("");
     }
 
-  help_button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_FINGER_HEIGHT,
+  help_button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_THUMB_HEIGHT,
 					     HILDON_BUTTON_ARRANGEMENT_HORIZONTAL,
 					     "Help", NULL);
   g_signal_connect (help_button, "clicked", G_CALLBACK (get_help), NULL);
 
-  play_button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_FINGER_HEIGHT,
+  play_button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_THUMB_HEIGHT,
 					     HILDON_BUTTON_ARRANGEMENT_HORIZONTAL,
 					     "Play", NULL);
   g_signal_connect (play_button, "clicked", G_CALLBACK (play_game), NULL);
 
-  gtk_box_pack_end (hbox2, play_button, TRUE, TRUE, 0);
-  gtk_box_pack_end (hbox2, help_button, TRUE, TRUE, 0);
+  gtk_box_pack_end (buttons, play_button, TRUE, TRUE, 0);
+  gtk_box_pack_end (buttons, help_button, TRUE, TRUE, 0);
 
   explain = gtk_label_new (explanation);
   gtk_label_set_line_wrap (explain, TRUE);
 
-  gtk_box_pack_end (vbox, hbox2, FALSE, FALSE, 0);
-  gtk_box_pack_end (vbox, explain, TRUE, TRUE, 0);
-  gtk_box_pack_end (vbox, gtk_label_new (version), FALSE, FALSE, 0);
+  gtk_box_pack_end (middle, explain, TRUE, TRUE, 0);
+  gtk_box_pack_end (middle, gtk_image_new_from_pixbuf (robot_pic), FALSE, FALSE, 0);
+
+  intro = gtk_vbox_new (FALSE, 0);
+  gtk_box_pack_end (GTK_BOX (intro), buttons, FALSE, FALSE, 0);
+  gtk_box_pack_end (GTK_BOX (intro), middle, TRUE, TRUE, 0);
+  gtk_box_pack_end (GTK_BOX (intro), gtk_label_new (version), FALSE, FALSE, 0);
 
   g_free (version);
 
-  intro = gtk_hbox_new (FALSE, 0);
-
-  gtk_box_pack_end (intro, vbox, TRUE, TRUE, 0);
-  gtk_box_pack_end (intro, gtk_image_new_from_pixbuf (robot_pic), FALSE, FALSE, 0);
   gtk_container_add (GTK_CONTAINER (window), GTK_WIDGET (intro));
 
   gtk_widget_show_all (window);
