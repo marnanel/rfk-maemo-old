@@ -554,14 +554,14 @@ show_intro (void)
 					     "Play", NULL);
   g_signal_connect (play_button, "clicked", G_CALLBACK (play_game), NULL);
 
-  gtk_box_pack_end (buttons, play_button, TRUE, TRUE, 0);
-  gtk_box_pack_end (buttons, help_button, TRUE, TRUE, 0);
+  gtk_box_pack_end (GTK_BOX (buttons), play_button, TRUE, TRUE, 0);
+  gtk_box_pack_end (GTK_BOX (buttons), help_button, TRUE, TRUE, 0);
 
   explain = gtk_label_new (explanation);
-  gtk_label_set_line_wrap (explain, TRUE);
+  gtk_label_set_line_wrap (GTK_LABEL (explain), TRUE);
 
-  gtk_box_pack_end (middle, explain, TRUE, TRUE, 0);
-  gtk_box_pack_end (middle, gtk_image_new_from_pixbuf (robot_pic), FALSE, FALSE, 0);
+  gtk_box_pack_end (GTK_BOX (middle), explain, TRUE, TRUE, 0);
+  gtk_box_pack_end (GTK_BOX (middle), gtk_image_new_from_pixbuf (robot_pic), FALSE, FALSE, 0);
 
   intro = gtk_vbox_new (FALSE, 0);
   gtk_box_pack_end (GTK_BOX (intro), buttons, FALSE, FALSE, 0);
