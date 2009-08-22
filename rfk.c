@@ -456,6 +456,13 @@ main (gint argc,
   place_in_arena_randomly (robot);
   place_in_arena_randomly (kitten);
 
+  if (nki_count < amount_of_random_stuff)
+    {
+      gtk_widget_show_all (window);
+      show_message ("There are too few non-kitten items to play a meaningful game.");
+      exit (EXIT_FAILURE);
+    }
+
   for (x=0; x < amount_of_random_stuff; x++)
     place_in_arena_randomly (random_character (description ()));
 
