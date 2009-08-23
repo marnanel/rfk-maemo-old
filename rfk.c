@@ -561,6 +561,19 @@ play_game (gpointer button, gpointer data)
 }
 
 static void
+restart (gpointer button, gpointer data)
+{
+  if (current_state == STATE_EPILOGUE)
+    {
+      show_message ("Have patience while robotfindskitten.");
+    }
+  else
+    {
+      switch_state (STATE_PROLOGUE);
+    }
+}
+
+static void
 set_up_board (void)
 {
   guint x, y;
@@ -618,7 +631,7 @@ set_up_widgets (void)
 {
   GtkWidget *middle = gtk_hbox_new (FALSE, 0);
   GtkWidget *buttons = gtk_hbox_new (TRUE, 0);
-  GtkWidget *explain = NULL, *help_button, *play_button, *intro;
+  GtkWidget *explain = NULL, *button, *intro;
   const char *explanation =
     "In this game, you are robot (#). "
     "Your job is to find kitten. This task is complicated "
@@ -630,10 +643,11 @@ set_up_widgets (void)
   GKeyFile *desktop = g_key_file_new ();
   gchar *version;
   guint x, y;
+  HildonAppMenu *menu = HILDON_APP_MENU (hildon_app_menu_new ());
   
   /* The window */
 
-  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  window = hildon_window_new ();
   gtk_window_set_title (GTK_WINDOW (window), "robotfindskitten");
   gtk_widget_modify_bg (window, GTK_STATE_NORMAL, &black);
   g_signal_connect (G_OBJECT (window), "button-press-event", G_CALLBACK (on_window_clicked), NULL);
@@ -660,18 +674,30 @@ set_up_widgets (void)
       version = g_strdup("");
     }
 
-  help_button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_THUMB_HEIGHT,
-					     HILDON_BUTTON_ARRANGEMENT_HORIZONTAL,
-					     "Help", NULL);
-  g_signal_connect (help_button, "clicked", G_CALLBACK (get_help), NULL);
-
-  play_button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_THUMB_HEIGHT,
+  button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_THUMB_HEIGHT,
 					     HILDON_BUTTON_ARRANGEMENT_HORIZONTAL,
 					     "Play", NULL);
-  g_signal_connect (play_button, "clicked", G_CALLBACK (play_game), NULL);
+  g_signal_connect (button, "clicked", G_CALLBACK (play_game), NULL);
 
-  gtk_box_pack_end (GTK_BOX (buttons), play_button, TRUE, TRUE, 0);
-  gtk_box_pack_end (GTK_BOX (buttons), help_button, TRUE, TRUE, 0);
+  gtk_box_pack_end (GTK_BOX (buttons), button, TRUE, TRUE, 0);
+
+  button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_THUMB_HEIGHT,
+					     HILDON_BUTTON_ARRANGEMENT_HORIZONTAL,
+					     "Help", NULL);
+  g_signal_connect (button, "clicked", G_CALLBACK (get_help), NULL);
+  gtk_box_pack_end (GTK_BOX (buttons), button, TRUE, TRUE, 0);
+
+  /* and another help button, this time for the menu */
+  button = gtk_button_new_with_label ("Help");
+  g_signal_connect (button, "clicked", G_CALLBACK (get_help), NULL);
+  hildon_app_menu_append (menu, GTK_BUTTON (button));
+
+  button = gtk_button_new_with_label ("Restart");
+  g_signal_connect (button, "clicked", G_CALLBACK (restart), NULL);
+  hildon_app_menu_append (menu, GTK_BUTTON (button));
+
+  gtk_widget_show_all (GTK_WIDGET (menu));
+  hildon_window_set_app_menu (HILDON_WINDOW (window), menu);
 
   explain = gtk_label_new (explanation);
   gtk_label_set_line_wrap (GTK_LABEL (explain), TRUE);
