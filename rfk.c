@@ -352,11 +352,13 @@ ending_animation_draw (GtkWidget *widget, GdkEventExpose *event, gpointer data)
       gdk_draw_pixbuf (GDK_DRAWABLE(widget->window),
 		       gc,
 		       scaled_love_pic, 0, 0,
-		       robot_x + gdk_pixbuf_get_width (robot_pic), all_y,
+		       robot_x + gdk_pixbuf_get_width (robot_pic) +
+		       (gdk_pixbuf_get_width (love_pic)-love_size)/2,
+		       all_y + (gdk_pixbuf_get_height (love_pic)-love_size)/2,
 		       -1, -1,
 		       GDK_RGB_DITHER_NONE, 0, 0);
 
-      love_size ++;
+      love_size += 10;
 
       if (love_size >= gdk_pixbuf_get_width (love_pic))
 	{
