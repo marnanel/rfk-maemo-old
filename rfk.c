@@ -56,8 +56,8 @@ description (void)
       r = random() % nki_count;
     }
   while (used[r]);
-
   used[r] = TRUE;
+
   return g_slist_nth_data (nki, r);
 }
 
@@ -184,8 +184,6 @@ ensure_messages_loaded (void)
     }
 
   fclose (nki_file);
-
-  used = g_malloc0 (nki_count);
 }
 
 void
@@ -553,6 +551,9 @@ set_up_board (void)
     {
       /* make everything new */
   
+      g_free (used);
+      used = g_malloc0 (nki_count * sizeof(gboolean));
+
       robot = gtk_label_new ("#");
       g_object_ref (robot);
       kitten = random_character ("You found kitten!  Way to go, robot!");
