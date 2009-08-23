@@ -221,6 +221,10 @@ switch_state (StateOfPlay new_state)
 
 gboolean animation_running = FALSE;
 
+/*
+static gboolean
+love_animation_draw
+*/
 static gboolean
 ending_animation_quit (gpointer data)
 {
@@ -240,6 +244,7 @@ ending_animation_draw (GtkWidget *widget, GdkEventExpose *event, gpointer data)
   static GdkGC *gc = NULL;
 
   const int stepsize = 3;
+  static int love_size = 40;
 
   if (!kitten_x)
     {
@@ -272,30 +277,44 @@ ending_animation_draw (GtkWidget *widget, GdkEventExpose *event, gpointer data)
 		   -1, -1,
 		   GDK_RGB_DITHER_NONE, 0, 0);
 
-  cycle_count++;
-  robot_x += stepsize;
-  kitten_x -= stepsize;
-
-  if (robot_x+robot_stop >= kitten_x)
+  if (robot_x+robot_stop < kitten_x)
     {
+      cycle_count++;
+      robot_x += stepsize;
+      kitten_x -= stepsize;
+    }
+  else
+    {
+      GdkPixbuf *scaled_love_pic =
+	gdk_pixbuf_scale_simple (love_pic,
+				 love_size,
+				 love_size,
+				 GDK_INTERP_BILINEAR);
+
       gdk_draw_pixbuf (GDK_DRAWABLE(widget->window),
 		       gc,
-		       love_pic, 0, 0,
+		       scaled_love_pic, 0, 0,
 		       robot_x + gdk_pixbuf_get_width (robot_pic), all_y,
 		       -1, -1,
 		       GDK_RGB_DITHER_NONE, 0, 0);
 
-      animation_running = FALSE;
+      love_size ++;
 
-      g_timeout_add (2000, ending_animation_quit, NULL);
+      if (love_size >= gdk_pixbuf_get_width (love_pic))
+	{
+	  animation_running = FALSE;
 
-      gdk_gc_unref (gc);
-      cycle_count = 0;
-      robot_x = 0;
-      robot_stop = 0;
-      kitten_x = 0;
-      all_y = 0;
-      gc = NULL;
+	  g_timeout_add (2000, ending_animation_quit, NULL);
+
+	  gdk_gc_unref (gc);
+	  love_size = 40;
+	  cycle_count = 0;
+	  robot_x = 0;
+	  robot_stop = 0;
+	  kitten_x = 0;
+	  all_y = 0;
+	  gc = NULL;
+	}
     }
 
   return TRUE;
