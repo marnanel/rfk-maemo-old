@@ -219,51 +219,54 @@ switch_state (StateOfPlay new_state)
 /* The ending animation.                                        */
 /****************************************************************/
 
+gboolean animation_running = FALSE;
+
 static gboolean
 ending_animation_quit (gpointer data)
 {
-  gtk_main_quit ();
+  switch_state (STATE_PROLOGUE);
   return FALSE;
 }
 
 static gboolean
 ending_animation_draw (GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
-  /* We only run through once, so just make it static. */
   static int cycle_count = 0;
 
   static int robot_x = 0;
   static int robot_stop = 0;
   static int kitten_x = 0;
   static int all_y = 0;
+  static GdkGC *gc = NULL;
 
   const int stepsize = 3;
 
   if (!kitten_x)
     {
+      gc = gdk_gc_new (GDK_DRAWABLE (widget->window));
+
       all_y = (event->area.height - gdk_pixbuf_get_height (love_pic)) / 2;
 
       robot_stop = gdk_pixbuf_get_width (robot_pic) + gdk_pixbuf_get_width (love_pic);
       kitten_x = event->area.width - (cycle_count*stepsize + gdk_pixbuf_get_width (kitten_pic));
     }
 
-  gdk_gc_set_foreground (widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
-			 &black);
+  gdk_gc_set_foreground (gc, &black);
 
-  gdk_draw_rectangle (GDK_DRAWABLE(widget->window),
-		      widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+  gdk_draw_rectangle (GDK_DRAWABLE (widget->window),
+		      gc,
 		      TRUE,
 		      0, 0, event->area.width, event->area.height);
 
-  gdk_draw_pixbuf (GDK_DRAWABLE(widget->window),
-		   widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+  gdk_draw_pixbuf (GDK_DRAWABLE (widget->window),
+		   gc,
 		   robot_pic, 0, 0,
 		   robot_x, all_y,
 		   -1, -1,
 		   GDK_RGB_DITHER_NONE, 0, 0);
 
-  gdk_draw_pixbuf (GDK_DRAWABLE(widget->window),
-		   widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+  gdk_draw_pixbuf (GDK_DRAWABLE (widget->window),
+		   gc,
 		   kitten_pic, 0, 0,
 		   kitten_x, all_y,
 		   -1, -1,
@@ -276,16 +279,23 @@ ending_animation_draw (GtkWidget *widget, GdkEventExpose *event, gpointer data)
   if (robot_x+robot_stop >= kitten_x)
     {
       gdk_draw_pixbuf (GDK_DRAWABLE(widget->window),
-		       widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+		       gc,
 		       love_pic, 0, 0,
 		       robot_x + gdk_pixbuf_get_width (robot_pic), all_y,
 		       -1, -1,
 		       GDK_RGB_DITHER_NONE, 0, 0);
 
-      g_object_unref (love_pic);
-      love_pic = NULL;
+      animation_running = FALSE;
 
       g_timeout_add (2000, ending_animation_quit, NULL);
+
+      gdk_gc_unref (gc);
+      cycle_count = 0;
+      robot_x = 0;
+      robot_stop = 0;
+      kitten_x = 0;
+      all_y = 0;
+      gc = NULL;
     }
 
   return TRUE;
@@ -294,7 +304,7 @@ ending_animation_draw (GtkWidget *widget, GdkEventExpose *event, gpointer data)
 static gboolean
 ending_animation_step (gpointer data)
 {
-  if (love_pic)
+  if (animation_running)
     {
       gdk_window_invalidate_rect (state_widget[STATE_EPILOGUE]->window,
 				  NULL, TRUE);
@@ -308,8 +318,11 @@ ending_animation_step (gpointer data)
 static void
 ending_animation ()
 {
-  switch_state (STATE_EPILOGUE);
-  g_timeout_add (10, ending_animation_step, NULL);
+  if (current_state!=STATE_EPILOGUE)
+    {
+      animation_running = TRUE;
+      g_timeout_add (10, ending_animation_step, NULL);
+    }
 }
 
 /****************************************************************/
@@ -358,7 +371,7 @@ move_robot (guint8 whichway)
 
       if (new_space == kitten)
 	{
-	  ending_animation ();
+	  switch_state (STATE_EPILOGUE);
 	}
 
       return TRUE;
@@ -497,6 +510,56 @@ play_game (gpointer button, gpointer data)
 }
 
 static void
+set_up_board (void)
+{
+  guint x, y;
+
+  if (current_state==STATE_PLAYING)
+    {
+      /* end of the game; clean up */
+
+      for (x=0; x < ARENA_WIDTH; x++)
+	for (y=0; y < ARENA_HEIGHT; y++)
+	  if (arena[x][y])
+	    {
+	      gtk_container_remove (GTK_CONTAINER (state_widget[STATE_PLAYING]),
+				    arena[x][y]);
+	      arena[x][y] = NULL;
+	    }
+
+      g_object_unref (robot);
+      g_object_unref (kitten);
+    }
+  else
+    {
+      /* make everything new */
+  
+      robot = gtk_label_new ("#");
+      g_object_ref (robot);
+      kitten = random_character ("You found kitten!  Way to go, robot!");
+      g_object_ref (kitten);
+
+      place_in_arena_randomly (robot);
+      place_in_arena_randomly (kitten);
+
+      if (nki_count < amount_of_random_stuff)
+	{
+	  /* sanity check failed */
+	  show_message ("There are too few non-kitten items to play a meaningful game.");
+	  exit (EXIT_FAILURE);
+	}
+
+      for (x=0; x < amount_of_random_stuff; x++)
+	place_in_arena_randomly (random_character (description ()));
+
+      for (x=0; x < ARENA_WIDTH; x++)
+	for (y=0; y < ARENA_HEIGHT; y++)
+	  if (!arena[x][y])
+	    place_in_arena_at_xy (gtk_label_new (NULL), x, y);
+    }
+}
+
+static void
 set_up_widgets (void)
 {
   GtkWidget *middle = gtk_hbox_new (FALSE, 0);
@@ -570,31 +633,15 @@ set_up_widgets (void)
   /* The game itself */
 
   state_widget[STATE_PLAYING] = gtk_table_new (ARENA_HEIGHT, ARENA_WIDTH, TRUE);
-
-  robot = gtk_label_new ("#");
-  g_object_ref (robot);
-  kitten = random_character ("You found kitten!  Way to go, robot!");
-
-  place_in_arena_randomly (robot);
-  place_in_arena_randomly (kitten);
-
-  if (nki_count < amount_of_random_stuff)
-    {
-      gtk_widget_show_all (window);
-      show_message ("There are too few non-kitten items to play a meaningful game.");
-      exit (EXIT_FAILURE);
-    }
-
-  for (x=0; x < amount_of_random_stuff; x++)
-    place_in_arena_randomly (random_character (description ()));
+  g_signal_connect (state_widget[STATE_PLAYING], "parent-set", G_CALLBACK (set_up_board), NULL);
 
   for (x=0; x < ARENA_WIDTH; x++)
     for (y=0; y < ARENA_HEIGHT; y++)
-      if (!arena[x][y])
-	place_in_arena_at_xy (gtk_label_new (NULL), x, y);
+      arena[x][y] = NULL;
 
   /* The epilogue */
   state_widget[STATE_EPILOGUE] =  gtk_drawing_area_new ();
+  g_signal_connect (state_widget[STATE_EPILOGUE], "parent-set", G_CALLBACK (ending_animation), NULL);
   g_signal_connect (G_OBJECT (state_widget[STATE_EPILOGUE]),
 		    "expose_event", G_CALLBACK (ending_animation_draw), NULL);
 
