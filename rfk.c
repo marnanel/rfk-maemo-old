@@ -18,18 +18,27 @@
 #define ARENA_WIDTH 25
 #define ARENA_HEIGHT 12
 
-const int amount_of_random_stuff = 15;
+const int amount_of_random_stuff = 1;
+
+typedef enum {
+  STATE_PROLOGUE,
+  STATE_PLAYING,
+  STATE_EPILOGUE,
+  STATE_LAST
+} StateOfPlay;
+
+StateOfPlay current_state = STATE_LAST;
+GtkWidget* state_widget[STATE_LAST];
 
 GSList *nki = NULL;
 guint nki_count = 0;
 
 GtkWidget *arena[ARENA_WIDTH][ARENA_HEIGHT];
-GtkWidget *intro, *table, *window, *robot, *kitten;
+GtkWidget *window, *robot, *kitten;
 int robot_x, robot_y;
 gboolean *used = NULL;
 
 GdkPixbuf *robot_pic, *love_pic, *kitten_pic;
-GtkWidget *animation_area;
 
 const GdkColor black = { 0, };
 
@@ -61,7 +70,7 @@ place_in_arena_at_xy (GtkWidget *item, int x, int y)
 {
   arena[x][y] = item;
 
-  gtk_table_attach_defaults (GTK_TABLE (table),
+  gtk_table_attach_defaults (GTK_TABLE (state_widget[STATE_PLAYING]),
 			     item,
 			     x, x+1,
 			     y, y+1);
@@ -188,6 +197,25 @@ load_images (void)
 }
 
 /****************************************************************/
+/* Stop doing that, and do something else.                      */
+/****************************************************************/
+static void
+switch_state (StateOfPlay new_state)
+{
+  if (current_state != STATE_LAST)
+    {
+      gtk_container_remove (GTK_CONTAINER (window), state_widget[current_state]);
+    }
+  gtk_container_add (GTK_CONTAINER (window), state_widget[new_state]);
+
+  gtk_widget_show_all (window);
+  gdk_window_set_events (GTK_WIDGET (window)->window,
+			 gdk_window_get_events(GTK_WIDGET (window)->window) | GDK_BUTTON_PRESS_MASK);
+
+  current_state = new_state;
+}
+
+/****************************************************************/
 /* The ending animation.                                        */
 /****************************************************************/
 
@@ -268,7 +296,7 @@ ending_animation_step (gpointer data)
 {
   if (love_pic)
     {
-      gdk_window_invalidate_rect (animation_area->window,
+      gdk_window_invalidate_rect (state_widget[STATE_EPILOGUE]->window,
 				  NULL, TRUE);
 
       return TRUE;
@@ -280,14 +308,7 @@ ending_animation_step (gpointer data)
 static void
 ending_animation ()
 {
-  animation_area =  gtk_drawing_area_new ();
-
-  gtk_container_remove (GTK_CONTAINER (window), GTK_WIDGET (table));
-  gtk_container_add (GTK_CONTAINER (window), GTK_WIDGET (animation_area));
-  gtk_widget_show_all (window);
-
-  g_signal_connect (G_OBJECT (animation_area),
-		    "expose_event", G_CALLBACK (ending_animation_draw), NULL);
+  switch_state (STATE_EPILOGUE);
   g_timeout_add (10, ending_animation_step, NULL);
 }
 
@@ -348,8 +369,8 @@ move_robot (guint8 whichway)
 
       g_object_ref (new_space);
 
-      gtk_container_remove (GTK_CONTAINER (table), robot);
-      gtk_container_remove (GTK_CONTAINER (table), new_space);
+      gtk_container_remove (GTK_CONTAINER (state_widget[STATE_PLAYING]), robot);
+      gtk_container_remove (GTK_CONTAINER (state_widget[STATE_PLAYING]), new_space);
 
       place_in_arena_at_xy (new_space, robot_x, robot_y);
       place_in_arena_at_xy (robot, robot_x+dx, robot_y+dy);
@@ -373,6 +394,11 @@ on_window_clicked (GtkWidget      *widget,
   int rx, ry;
   double angle;
 
+  if (current_state!=STATE_PLAYING)
+    {
+      return TRUE;
+    }
+
   rx = (robot->allocation.x+robot->allocation.width/2);
   ry = (robot->allocation.y+robot->allocation.height/2);
 
@@ -392,6 +418,11 @@ on_key_pressed (GtkWidget      *widget,
 {
   gint i;
   guint keyval = event->keyval;
+
+  if (current_state!=STATE_PLAYING)
+    {
+      return FALSE;
+    }
 
   if (keyval>='A' && keyval<='Z')
     {
@@ -421,54 +452,6 @@ on_key_pressed (GtkWidget      *widget,
   return FALSE;
 }
 
-void
-create_window (void)
-{
-  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-  gtk_window_set_title (GTK_WINDOW (window), "robotfindskitten");
-  gtk_widget_modify_bg (window, GTK_STATE_NORMAL, &black);
-}
-
-void
-set_up_game (void)
-{
-  guint x, y;
-
-  g_signal_connect (G_OBJECT (window), "button-press-event", G_CALLBACK (on_window_clicked), NULL);
-  g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (on_key_pressed), NULL);
-  g_signal_connect (G_OBJECT (window), "delete_event", G_CALLBACK (gtk_main_quit), NULL);
-  gdk_window_set_events (GTK_WIDGET (window)->window,
-			 gdk_window_get_events(GTK_WIDGET (window)->window) | GDK_BUTTON_PRESS_MASK);
-	
-  table = gtk_table_new (ARENA_HEIGHT, ARENA_WIDTH, TRUE);
-  gtk_container_remove (GTK_CONTAINER (window), GTK_WIDGET (intro));
-  gtk_container_add (GTK_CONTAINER (window), GTK_WIDGET (table));
-
-  robot = gtk_label_new ("#");
-  g_object_ref (robot);
-  kitten = random_character ("You found kitten!  Way to go, robot!");
-
-  place_in_arena_randomly (robot);
-  place_in_arena_randomly (kitten);
-
-  if (nki_count < amount_of_random_stuff)
-    {
-      gtk_widget_show_all (window);
-      show_message ("There are too few non-kitten items to play a meaningful game.");
-      exit (EXIT_FAILURE);
-    }
-
-  for (x=0; x < amount_of_random_stuff; x++)
-    place_in_arena_randomly (random_character (description ()));
-
-  for (x=0; x < ARENA_WIDTH; x++)
-    for (y=0; y < ARENA_HEIGHT; y++)
-      if (!arena[x][y])
-	place_in_arena_at_xy (gtk_label_new (NULL), x, y);
-
-  gtk_widget_show_all (window);
-}
-
 /****************************************************************/
 /* Online help.                                                 */
 /****************************************************************/
@@ -477,6 +460,7 @@ get_help (gpointer button, gpointer data)
 {
   DBusGConnection *connection;
   GError *error = NULL;
+
   DBusGProxy *proxy;
 
   connection = dbus_g_bus_get (DBUS_BUS_SESSION,
@@ -509,15 +493,15 @@ get_help (gpointer button, gpointer data)
 void
 play_game (gpointer button, gpointer data)
 {
-  set_up_game ();
+  switch_state (STATE_PLAYING);
 }
 
-void
-show_intro (void)
+static void
+set_up_widgets (void)
 {
   GtkWidget *middle = gtk_hbox_new (FALSE, 0);
   GtkWidget *buttons = gtk_hbox_new (TRUE, 0);
-  GtkWidget *explain = NULL, *help_button, *play_button;
+  GtkWidget *explain = NULL, *help_button, *play_button, *intro;
   const char *explanation =
     "In this game, you are robot (#). "
     "Your job is to find kitten. This task is complicated "
@@ -528,6 +512,18 @@ show_intro (void)
     "arrow keys.";
   GKeyFile *desktop = g_key_file_new ();
   gchar *version;
+  guint x, y;
+  
+  /* The window */
+
+  window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_title (GTK_WINDOW (window), "robotfindskitten");
+  gtk_widget_modify_bg (window, GTK_STATE_NORMAL, &black);
+  g_signal_connect (G_OBJECT (window), "button-press-event", G_CALLBACK (on_window_clicked), NULL);
+  g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (on_key_pressed), NULL);
+  g_signal_connect (G_OBJECT (window), "delete_event", G_CALLBACK (gtk_main_quit), NULL);
+
+  /* The prologue */
 
   if (g_key_file_load_from_file (desktop,
 				 "/usr/share/applications/hildon/rfk.desktop",
@@ -567,12 +563,46 @@ show_intro (void)
   gtk_box_pack_end (GTK_BOX (intro), buttons, FALSE, FALSE, 0);
   gtk_box_pack_end (GTK_BOX (intro), middle, TRUE, TRUE, 0);
   gtk_box_pack_end (GTK_BOX (intro), gtk_label_new (version), FALSE, FALSE, 0);
-
   g_free (version);
 
-  gtk_container_add (GTK_CONTAINER (window), GTK_WIDGET (intro));
+  state_widget[STATE_PROLOGUE] = intro;
 
-  gtk_widget_show_all (window);
+  /* The game itself */
+
+  state_widget[STATE_PLAYING] = gtk_table_new (ARENA_HEIGHT, ARENA_WIDTH, TRUE);
+
+  robot = gtk_label_new ("#");
+  g_object_ref (robot);
+  kitten = random_character ("You found kitten!  Way to go, robot!");
+
+  place_in_arena_randomly (robot);
+  place_in_arena_randomly (kitten);
+
+  if (nki_count < amount_of_random_stuff)
+    {
+      gtk_widget_show_all (window);
+      show_message ("There are too few non-kitten items to play a meaningful game.");
+      exit (EXIT_FAILURE);
+    }
+
+  for (x=0; x < amount_of_random_stuff; x++)
+    place_in_arena_randomly (random_character (description ()));
+
+  for (x=0; x < ARENA_WIDTH; x++)
+    for (y=0; y < ARENA_HEIGHT; y++)
+      if (!arena[x][y])
+	place_in_arena_at_xy (gtk_label_new (NULL), x, y);
+
+  /* The epilogue */
+  state_widget[STATE_EPILOGUE] =  gtk_drawing_area_new ();
+  g_signal_connect (G_OBJECT (state_widget[STATE_EPILOGUE]),
+		    "expose_event", G_CALLBACK (ending_animation_draw), NULL);
+
+  for (x=0; x<STATE_LAST; x++)
+    {
+      /* so we don't lose them when we take them offscreen */
+      g_object_ref (state_widget[x]);
+    }
 }
 
 /****************************************************************/
@@ -590,9 +620,9 @@ main (gint argc,
   ensure_messages_loaded ();
   load_images ();
 
-  create_window ();
-  show_intro ();
-
+  set_up_widgets ();
+  switch_state (STATE_PROLOGUE);
+  
   gtk_main ();
 
   return EXIT_SUCCESS;
