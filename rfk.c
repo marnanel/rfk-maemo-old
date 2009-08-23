@@ -18,7 +18,7 @@
 #define ARENA_WIDTH 25
 #define ARENA_HEIGHT 12
 
-const int amount_of_random_stuff = 1;
+const int amount_of_random_stuff = 15;
 
 typedef enum {
   STATE_PROLOGUE,
