@@ -46,7 +46,7 @@ const GdkColor black = { 0, };
 /* Random object descriptions.                                  */
 /****************************************************************/
 
-char *
+static char *
 description (void)
 {
   int r;
@@ -65,7 +65,7 @@ description (void)
 /* Placing objects.                                             */
 /****************************************************************/
 
-void
+static void
 place_in_arena_at_xy (GtkWidget *item, int x, int y)
 {
   arena[x][y] = item;
@@ -82,7 +82,7 @@ place_in_arena_at_xy (GtkWidget *item, int x, int y)
     }
 }
 
-void
+static void
 place_in_arena_randomly (GtkWidget *item)
 {
   int x, y;
@@ -101,7 +101,7 @@ place_in_arena_randomly (GtkWidget *item)
 /* Labels representing things the robot might find.             */
 /****************************************************************/
 
-GtkWidget *
+static GtkWidget *
 random_character (gchar *description)
 {
   gchar character[2] = { random() % ('~'-'!') + '!', 0 };
@@ -125,7 +125,7 @@ random_character (gchar *description)
 /* Talking back to the user.                                    */
 /****************************************************************/
 
-void
+static void
 show_message (const char *message)
 {
   HildonNote* note = HILDON_NOTE
@@ -139,7 +139,8 @@ show_message (const char *message)
 /****************************************************************/
 /* Loading the non-kitten objects.                              */
 /****************************************************************/
-void
+
+static void
 ensure_messages_loaded (void)
 {
   FILE *nki_file = NULL;
@@ -186,7 +187,7 @@ ensure_messages_loaded (void)
   fclose (nki_file);
 }
 
-void
+static void
 load_images (void)
 {
   robot_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-robot.png", NULL);
@@ -197,6 +198,7 @@ load_images (void)
 /****************************************************************/
 /* Stop doing that, and do something else.                      */
 /****************************************************************/
+
 static void
 switch_state (StateOfPlay new_state)
 {
@@ -216,6 +218,7 @@ switch_state (StateOfPlay new_state)
 /****************************************************************/
 /* Things we need DBus for: online help, and vibration.         */
 /****************************************************************/
+
 static void
 call_dbus (DBusBusType type,
 	   char *name,
@@ -425,7 +428,7 @@ direction directions[] = {
   { GDK_Up,        'k',  0, -1 }
 };
 
-gboolean
+static gboolean
 move_robot (guint8 whichway)
 {
   GtkWidget *new_space;
@@ -476,7 +479,7 @@ move_robot (guint8 whichway)
 /* Event handlers.                                              */
 /****************************************************************/
 
-gboolean
+static gboolean
 on_window_clicked (GtkWidget      *widget,
 		   GdkEventButton *event,
 		   gpointer        user_data)
@@ -502,7 +505,7 @@ on_window_clicked (GtkWidget      *widget,
   return TRUE;
 }
 
-gboolean
+static gboolean
 on_key_pressed (GtkWidget      *widget,
 		GdkEventKey    *event,
 		gpointer        user_data)
@@ -549,7 +552,7 @@ on_key_pressed (GtkWidget      *widget,
   return FALSE;
 }
 
-void
+static void
 play_game (gpointer button, gpointer data)
 {
   switch_state (STATE_PLAYING);
