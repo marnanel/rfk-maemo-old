@@ -8,4 +8,6 @@ Exec=/usr/bin/rfk
 Icon=rfk
 X-Icon-path=/usr/share/pixmaps/
 MimeType=text/x-rfk-nki
-X-Osso-Service=org.robotfindskitten
+# This works, but we don't properly respond to it yet,
+# so we eventually get SIGKILLed.  This needs fixing.
+#X-Osso-Service=org.robotfindskitten
