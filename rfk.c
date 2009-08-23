@@ -280,10 +280,6 @@ vibrate (void)
 
 gboolean animation_running = FALSE;
 
-/*
-static gboolean
-love_animation_draw
-*/
 static gboolean
 ending_animation_quit (gpointer data)
 {
@@ -641,6 +637,9 @@ set_up_widgets (void)
 
   /* The prologue */
 
+  /* Get the rather odd version string.  The RFK spec says that
+   * it should read v<major>.<minor>.<number-of-NKIs>.
+   */
   if (g_key_file_load_from_file (desktop,
 				 "/usr/share/applications/hildon/rfk.desktop",
 				 G_KEY_FILE_NONE,
