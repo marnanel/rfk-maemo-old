@@ -214,6 +214,67 @@ switch_state (StateOfPlay new_state)
 }
 
 /****************************************************************/
+/* Things we need DBus for: online help, and vibration.         */
+/****************************************************************/
+static void
+call_dbus (DBusBusType type,
+	   char *name,
+	   char *path,
+	   char *interface,
+	   char *method,
+	   char *parameter)
+{
+  DBusGConnection *connection;
+  GError *error = NULL;
+
+  DBusGProxy *proxy;
+
+  connection = dbus_g_bus_get (type,
+                               &error);
+  if (connection == NULL)
+    {
+      show_message (error->message);
+      g_error_free (error);
+      return;
+    }
+
+  proxy = dbus_g_proxy_new_for_name (connection, name, path, interface);
+
+  error = NULL;
+  if (!dbus_g_proxy_call (proxy, method, &error,
+			  G_TYPE_STRING, parameter,
+			  G_TYPE_INVALID,
+			  G_TYPE_INVALID))
+    {
+      show_message (error->message);
+      g_error_free (error);
+    }
+}
+
+static gboolean
+get_help (gpointer button, gpointer data)
+{
+  call_dbus (DBUS_BUS_SESSION,
+	     "com.nokia.osso_browser",
+	     "/com/nokia/osso_browser/request",
+	     "com.nokia.osso_browser",
+	     "load_url",
+	     "/usr/share/rfk/help.html");
+  return FALSE;
+}
+
+static void
+vibrate (void)
+{
+  call_dbus (DBUS_BUS_SYSTEM,
+	     "com.nokia.mce",
+	     "/com/nokia/mce/request",
+	     "com.nokia.mce.request",
+	     "req_vibrator_pattern_activate",
+	     "PatternIncomingMessage");
+}
+
+/****************************************************************/
 /* The ending animation.                                        */
 /****************************************************************/
 
@@ -300,6 +361,10 @@ ending_animation_draw (GtkWidget *widget, GdkEventExpose *event, gpointer data)
 
       if (love_size >= gdk_pixbuf_get_width (love_pic))
 	{
+	  /* all done! */
+	  
+	  vibrate ();
+	  
 	  animation_running = FALSE;
 
 	  g_timeout_add (2000, ending_animation_quit, NULL);
@@ -485,44 +550,6 @@ on_key_pressed (GtkWidget      *widget,
       show_message (gtk_label_get_text (GTK_LABEL (kitten)));
     }
 
-  return FALSE;
-}
-
-/****************************************************************/
-/* Online help.                                                 */
-/****************************************************************/
-gboolean
-get_help (gpointer button, gpointer data)
-{
-  DBusGConnection *connection;
-  GError *error = NULL;
-
-  DBusGProxy *proxy;
-
-  connection = dbus_g_bus_get (DBUS_BUS_SESSION,
-                               &error);
-  if (connection == NULL)
-    {
-      show_message (error->message);
-      g_error_free (error);
-      return FALSE;
-    }
-
-  proxy = dbus_g_proxy_new_for_name (connection,
-                                     "com.nokia.osso_browser",
-                                     "/com/nokia/osso_browser/request",
-                                     "com.nokia.osso_browser");
-
-  error = NULL;
-  if (!dbus_g_proxy_call (proxy, "load_url", &error,
-			  G_TYPE_STRING, "/usr/share/rfk/help.html",
-			  G_TYPE_INVALID,
-			  G_TYPE_INVALID))
-    {
-      show_message (error->message);
-      g_error_free (error);
-      return FALSE;
-    }
   return FALSE;
 }
 
