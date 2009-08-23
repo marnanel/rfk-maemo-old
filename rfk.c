@@ -479,6 +479,12 @@ on_key_pressed (GtkWidget      *widget,
 	}
     }
 
+  if (keyval=='d' && event->state & GDK_CONTROL_MASK)
+    {
+      /* secret debugging key */
+      show_message (gtk_label_get_text (GTK_LABEL (kitten)));
+    }
+
   return FALSE;
 }
 
