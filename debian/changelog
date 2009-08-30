@@ -1,3 +1,17 @@
+rfk (1.32-1) unstable; urgency=low
+
+  * Added icon to debian/control
+  * Renamed description to be more descriptive
+
+ -- Thomas Thurman <tthurman@gnome.org>  Sun, 30 Aug 2009 12:57:11 -0400
+	
+rfk (1.31-1) unstable; urgency=low
+
+  * Corrected section in debian/control
+  * A couple of non-kitten items use the TM symbol for trademarks
+
+ -- Thomas Thurman <tthurman@gnome.org>  Thu, 27 Aug 2009 16:06:58 +0200
+	
 rfk (1.30-1) unstable; urgency=low
 
   * Robot can move diagonally

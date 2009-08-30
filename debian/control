@@ -1,5 +1,5 @@
 Source: rfk
-Section: unknown
+Section: user/games
 Priority: extra
 Maintainer: Thomas Thurman <tthurman@gnome.org>
 Build-Depends: debhelper (>= 5), libhildon1-dev, libdbus-glib-1-dev, libdbus-1-dev
@@ -8,7 +8,53 @@ Standards-Version: 3.7.2
 Package: rfk
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: robot finds kitten for maemo
+Description: The story of a robot who must find a kitten
   robotfindskitten is a "Zen simulation," originally written
   by Leonard Richardson for DOS.  The user must find a kitten
   in a field of random entities.
+Maemo-Icon-26:
+  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
+  NTM6MjItMDQ6MDDCYv1JAAAAAElFTkSuQmCC
