@@ -17,9 +17,9 @@ install: rfk rfk.png rfk-robot.png rfk-love.png rfk-kitten.png rfk.desktop non-k
 	install org.robotfindskitten.service ${DESTDIR}/usr/share/dbus-1/services
 	install -d ${DESTDIR}/usr/share/pixmaps
 	install rfk.png ${DESTDIR}/usr/share/pixmaps
-	install -d ${DESTDIR}/usr/share/rfk
-	install rfk-robot.png ${DESTDIR}/usr/share/rfk
-	install rfk-love.png ${DESTDIR}/usr/share/rfk
-	install rfk-kitten.png ${DESTDIR}/usr/share/rfk
-	install non-kitten-items.rfk ${DESTDIR}/usr/share/rfk
-	install help.html ${DESTDIR}/usr/share/rfk
+	install -d ${DESTDIR}/opt/rfk
+	install rfk-robot.png ${DESTDIR}/opt/rfk
+	install rfk-love.png ${DESTDIR}/opt/rfk
+	install rfk-kitten.png ${DESTDIR}/opt/rfk
+	install non-kitten-items.rfk ${DESTDIR}/opt/rfk
+	install help.html ${DESTDIR}/opt/rfk

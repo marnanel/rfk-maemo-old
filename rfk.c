@@ -6,6 +6,7 @@
  *  gcc -Wall -g rfk.c -o rfk `pkg-config --cflags --libs gtk+-2.0 hildon-1 dbus-glib-1 dbus-1`
  */
 
+#include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <gtk/gtk.h>
 #include <stdlib.h>
@@ -14,6 +15,13 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <mce/mode-names.h>
+#include <mce/dbus-names.h>
+
+#define MCE_SIGNAL_MATCH "type='signal'," \
+	        "sender='"    MCE_SERVICE     "'," \
+        "path='"      MCE_SIGNAL_PATH "'," \
+        "interface='" MCE_SIGNAL_IF   "'"
 
 #define ARENA_WIDTH 25
 #define ARENA_HEIGHT 12
@@ -33,6 +41,8 @@ GtkWidget* state_widget[STATE_LAST];
 GSList *nki = NULL;
 guint nki_count = 0;
 
+gboolean portrait_mode = FALSE;
+
 GtkWidget *arena[ARENA_WIDTH][ARENA_HEIGHT];
 GtkWidget *window, *robot, *kitten;
 int robot_x, robot_y;
@@ -41,6 +51,7 @@ gboolean *used = NULL;
 GdkPixbuf *robot_pic, *love_pic, *kitten_pic;
 
 const GdkColor black = { 0, };
+GdkColor grey = { 0, 0x8888, 0x8888, 0x8888 };
 
 /****************************************************************/
 /* Random object descriptions.                                  */
@@ -150,7 +161,7 @@ ensure_messages_loaded (void)
   if (nki_count)
     return;
 
-  nki_file = fopen ("/usr/share/rfk/non-kitten-items.rfk", "r");
+  nki_file = fopen ("/opt/rfk/non-kitten-items.rfk", "r");
 
   if (!nki_file)
     {
@@ -190,9 +201,9 @@ ensure_messages_loaded (void)
 static void
 load_images (void)
 {
-  robot_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-robot.png", NULL);
-  love_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-love.png", NULL);
-  kitten_pic = gdk_pixbuf_new_from_file ("/usr/share/rfk/rfk-kitten.png", NULL);
+  robot_pic = gdk_pixbuf_new_from_file ("/opt/rfk/rfk-robot.png", NULL);
+  love_pic = gdk_pixbuf_new_from_file ("/opt/rfk/rfk-love.png", NULL);
+  kitten_pic = gdk_pixbuf_new_from_file ("/opt/rfk/rfk-kitten.png", NULL);
 }
 
 /****************************************************************/
@@ -216,7 +227,8 @@ switch_state (StateOfPlay new_state)
 }
 
 /****************************************************************/
-/* Things we need DBus for: online help, and vibration.         */
+/* Things we need DBus for: online help, vibration, and         */
+/* orientation.                                                 */
 /****************************************************************/
 
 static void
@@ -243,15 +255,9 @@ call_dbus (DBusBusType type,
 
   proxy = dbus_g_proxy_new_for_name (connection, name, path, interface);
 
-  error = NULL;
-  if (!dbus_g_proxy_call (proxy, method, &error,
-			  G_TYPE_STRING, parameter,
-			  G_TYPE_INVALID,
-			  G_TYPE_INVALID))
-    {
-      show_message (error->message);
-      g_error_free (error);
-    }
+  dbus_g_proxy_call_no_reply (proxy, method,
+		  G_TYPE_STRING, parameter,
+		  G_TYPE_INVALID);
 }
 
 static gboolean
@@ -262,7 +268,7 @@ get_help (gpointer button, gpointer data)
 	     "/com/nokia/osso_browser/request",
 	     "com.nokia.osso_browser",
 	     "load_url",
-	     "/usr/share/rfk/help.html");
+	     "/opt/rfk/help.html");
   return FALSE;
 }
 
@@ -275,6 +281,71 @@ vibrate (void)
 	     "com.nokia.mce.request",
 	     "req_vibrator_pattern_activate",
 	     "PatternIncomingMessage");
+}
+
+
+static DBusHandlerResult
+mce_filter_func (DBusConnection * connection,
+                 DBusMessage * message, gpointer dummy)
+{
+  DBusError error;
+  char *rotation, *stand, *face;
+  int x, y, z;
+	
+  if (!dbus_message_is_signal (message, MCE_SIGNAL_IF, MCE_DEVICE_ORIENTATION_SIG))
+    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+  dbus_error_init (&error);
+  if (dbus_message_get_args (message,
+                             &error,
+                             DBUS_TYPE_STRING, &rotation,
+                             DBUS_TYPE_STRING, &stand,
+                             DBUS_TYPE_STRING, &face,
+                             DBUS_TYPE_INT32,  &x,
+                             DBUS_TYPE_INT32,  &y,
+                             DBUS_TYPE_INT32,  &z, DBUS_TYPE_INVALID))
+    {
+      /* Rotate main window */
+      if (strcmp (rotation, MCE_ORIENTATION_PORTRAIT)==0)
+        {		
+          portrait_mode = TRUE;
+          hildon_gtk_window_set_portrait_flags (GTK_WINDOW (window), HILDON_PORTRAIT_MODE_REQUEST|HILDON_PORTRAIT_MODE_SUPPORT);
+        }
+      else
+        {
+          portrait_mode = FALSE;
+          hildon_gtk_window_set_portrait_flags (GTK_WINDOW (window), HILDON_PORTRAIT_MODE_SUPPORT);
+        }
+    }
+  else
+    {
+      g_warning ("%s: %s\n", error.name, error.message);
+      dbus_error_free (&error);
+    }
+
+  return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}	    
+
+static void
+check_for_rotation (void)
+{
+  DBusConnection *connection = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
+  
+  call_dbus (DBUS_BUS_SYSTEM,
+	     MCE_SERVICE,
+	     MCE_REQUEST_PATH,
+	     MCE_REQUEST_IF,
+	     "req_accelerometer_enable",
+	     NULL);
+
+  dbus_bus_add_match (connection, MCE_SIGNAL_MATCH, NULL);
+
+  dbus_connection_add_filter (connection,
+                               (DBusHandleMessageFunction) mce_filter_func,
+                               NULL, NULL);
+  
+  hildon_gtk_window_set_portrait_flags (GTK_WINDOW (window),
+                                        HILDON_PORTRAIT_MODE_SUPPORT);
 }
 
 /****************************************************************/
@@ -434,8 +505,10 @@ static gboolean
 move_robot (guint8 whichway)
 {
   GtkWidget *new_space;
-  gint8 dx = directions[whichway].move_x;
-  gint8 dy = directions[whichway].move_y;
+  gint8 dx, dy;
+  
+  dx = directions[whichway].move_x;
+  dy = directions[whichway].move_y;
 
   const char *found;
 
@@ -486,23 +559,36 @@ on_window_clicked (GtkWidget      *widget,
 		   GdkEventButton *event,
 		   gpointer        user_data)
 {
-  /** Centre point of robot's representation on screen */
-  int rx, ry;
-  double angle;
+  int quarter_width, quarter_height;
+  int quadrant;
+  int directions[] = { 0, 7, 6, 1, -1, 5, 2, 3, 4 };
 
   if (current_state!=STATE_PLAYING)
     {
       return TRUE;
     }
 
-  rx = (robot->allocation.x+robot->allocation.width/2);
-  ry = (robot->allocation.y+robot->allocation.height/2);
+  quarter_width = window->allocation.width/4;
+  quarter_height = window->allocation.height/4;
 
-  angle = atan2(event->x - rx,
-		event->y - ry) +
-    M_PI * (9/8);
+  if (event->x < quarter_width)
+    quadrant = 0;
+  else if (event->x > quarter_width*3)
+    quadrant = 2;
+  else
+    quadrant = 1;
 
-  move_robot (((int) (angle / (M_PI/4))) % 8);
+  if (event->y < quarter_height)
+    /* nothing */;
+  else if (event->y > quarter_height*3)
+    quadrant += 6;
+  else
+    quadrant += 3;
+
+  quadrant = directions[quadrant];
+
+  if (quadrant >= 0)
+    move_robot (quadrant);
 
   return TRUE;
 }
@@ -530,16 +616,21 @@ on_key_pressed (GtkWidget      *widget,
       if (keyval==directions[i].gdk_key ||
 	  keyval==directions[i].vi_key)
 	{
+          int whichway = i;
+
+	  if (portrait_mode)
+             whichway = (whichway+6)%8;
+
 	  if (event->state & GDK_SHIFT_MASK)
 	    {
-	      while (!move_robot (i))
+	      while (!move_robot (whichway))
 		{
 		  /* keep going, robot! */
 		}
 	    }
 	  else
 	    {
-	      move_robot (i);
+	      move_robot (whichway);
 	    }
 	  return FALSE;
 	}
@@ -608,6 +699,7 @@ set_up_board (void)
 
       place_in_arena_randomly (robot);
       place_in_arena_randomly (kitten);
+      gtk_widget_modify_bg (kitten, GTK_STATE_NORMAL, &grey);
 
       if (nki_count < amount_of_random_stuff)
 	{
@@ -638,7 +730,7 @@ set_up_widgets (void)
     "by the existence of various things which are not kitten. "
     "Robot must touch items to determine if they are kitten or "
     "not. The game ends when robotfindskitten. You may move "
-    "robot about by tapping on any side of robot, or with the "
+    "robot about by tapping on any side of the screen, or with the "
     "arrow keys.";
   GKeyFile *desktop = g_key_file_new ();
   gchar *version;
@@ -653,6 +745,8 @@ set_up_widgets (void)
   g_signal_connect (G_OBJECT (window), "button-press-event", G_CALLBACK (on_window_clicked), NULL);
   g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (on_key_pressed), NULL);
   g_signal_connect (G_OBJECT (window), "delete_event", G_CALLBACK (gtk_main_quit), NULL);
+
+  gdk_colormap_alloc_color (gdk_colormap_get_system (), &grey, TRUE, TRUE);
 
   /* The prologue */
 
@@ -702,6 +796,7 @@ set_up_widgets (void)
   explain = gtk_label_new (explanation);
   gtk_label_set_line_wrap (GTK_LABEL (explain), TRUE);
 
+  gtk_box_pack_end (GTK_BOX (middle), gtk_image_new_from_pixbuf (kitten_pic), FALSE, FALSE, 0);
   gtk_box_pack_end (GTK_BOX (middle), explain, TRUE, TRUE, 0);
   gtk_box_pack_end (GTK_BOX (middle), gtk_image_new_from_pixbuf (robot_pic), FALSE, FALSE, 0);
 
@@ -751,6 +846,7 @@ main (gint argc,
   load_images ();
 
   set_up_widgets ();
+  check_for_rotation ();
   switch_state (STATE_PROLOGUE);
   
   gtk_main ();
