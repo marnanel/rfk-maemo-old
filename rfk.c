@@ -550,6 +550,42 @@ move_robot (guint8 whichway)
     }
 }
 
+static void
+move_robot_randomly (void)
+{
+  guint8 whichway;
+  gint8 dx, dy;
+  guint8 i;
+
+  for (i=0; i<100; i++)
+    {
+      whichway = random() % 8;
+      dx = directions[whichway].move_x;
+      dy = directions[whichway].move_y;
+
+      /* Can't move off the edge. */
+      if (robot_x+dx<0 ||
+	  robot_y+dy<0 ||
+	  robot_x+dx>=ARENA_WIDTH ||
+	  robot_y+dy>=ARENA_HEIGHT)
+	continue;
+
+      /* Can't move onto an occupied square randomly. */
+
+      if (g_object_get_data (G_OBJECT (arena[robot_x+dx][robot_y+dy]),
+			     "examine"))
+	continue;
+
+      /* Success! */
+      move_robot (whichway);
+      return;
+    }
+
+  /* if we get here, robot is stuck or just very unlucky;
+   * either way we do nothing.
+   */
+}
+
 /****************************************************************/
 /* Event handlers.                                              */
 /****************************************************************/
@@ -640,6 +676,10 @@ on_key_pressed (GtkWidget      *widget,
     {
       /* secret debugging key */
       show_message (gtk_label_get_text (GTK_LABEL (kitten)));
+    }
+  else if (keyval=='r')
+    {
+      move_robot_randomly ();
     }
 
   return FALSE;
