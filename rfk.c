@@ -6,6 +6,12 @@
  *  gcc -Wall -g rfk.c -o rfk `pkg-config --cflags --libs gtk+-2.0 hildon-1 dbus-glib-1 dbus-1`
  */
 
+/*
+ TO DO:
+  - working demo mode
+  - gtkhtml instructions reader
+*/
+
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <gtk/gtk.h>
@@ -46,6 +52,7 @@ gboolean portrait_mode = FALSE;
 GtkWidget *arena[ARENA_WIDTH][ARENA_HEIGHT];
 GtkWidget *window, *robot, *kitten;
 int robot_x, robot_y;
+int robot_demo_x=-1, robot_demo_y=-1;
 gboolean *used = NULL;
 
 GdkPixbuf *robot_pic, *love_pic, *kitten_pic;
@@ -530,6 +537,8 @@ move_robot (guint8 whichway)
 	  switch_state (STATE_EPILOGUE);
 	}
 
+      robot_demo_x = robot_demo_y = -1;
+      g_object_set_data (G_OBJECT (new_space), "visited", "");
       return TRUE;
     }
   else
@@ -571,7 +580,6 @@ move_robot_randomly (void)
 	continue;
 
       /* Can't move onto an occupied square randomly. */
-
       if (g_object_get_data (G_OBJECT (arena[robot_x+dx][robot_y+dy]),
 			     "examine"))
 	continue;
@@ -584,6 +592,69 @@ move_robot_randomly (void)
   /* if we get here, robot is stuck or just very unlucky;
    * either way we do nothing.
    */
+}
+
+static gboolean
+item_is_investigatable (guint8 x, guint8 y)
+{
+  GObject *item = G_OBJECT (arena[x][y]);
+
+  if (g_object_get_data (item, "examine")==NULL)
+    /* Empty space */
+    return FALSE;
+
+  if (g_object_get_data (item, "visited")!=NULL)
+    /* Been there, done that */
+    return FALSE;
+
+  return TRUE;
+}
+
+static void
+move_robot_demo (void)
+{
+  gint8 whichway;
+  gint8 dx, dy;
+
+  if (robot_demo_x == -1)
+    {
+      /* Find an item to investigate. */
+      /* STUB: randomise robot_demo_x & y*/
+
+      robot_demo_x = robot_demo_y = 0;
+
+      while (!item_is_investigatable (robot_demo_x,
+				      robot_demo_y))
+	{
+	  robot_demo_x++;
+	  if (robot_demo_x==ARENA_WIDTH)
+	    {
+	      robot_demo_x=0;
+	      robot_demo_y++;
+	      if (robot_demo_y==ARENA_HEIGHT)
+		{
+		  robot_demo_y=0;
+		}
+	    }
+	}
+    }
+  
+  whichway = ((int) (7+atan2 (robot_x-robot_demo_x, robot_y-robot_demo_y)*4/M_PI)) % 8;
+  dx = directions[whichway].move_x;
+  dy = directions[whichway].move_y;
+
+  if (!(robot_x+dx == robot_demo_x && robot_y+dy == robot_demo_y)
+      &&
+      g_object_get_data (G_OBJECT (arena[robot_x+dx][robot_y+dy]),
+			 "examine"))
+    {
+      /* Can't move onto an occupied square, unless it's the target. */
+      move_robot_randomly ();
+    }
+  else
+    {
+      move_robot (whichway);
+    }
 }
 
 /****************************************************************/
@@ -681,6 +752,10 @@ on_key_pressed (GtkWidget      *widget,
     {
       move_robot_randomly ();
     }
+  else if (keyval=='d')
+    {
+      move_robot_demo ();
+    }
 
   return FALSE;
 }
@@ -724,6 +799,7 @@ set_up_board (void)
 
       g_object_unref (robot);
       g_object_unref (kitten);
+      robot_demo_x = robot_demo_y = -1;
     }
   else
     {
