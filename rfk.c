@@ -32,6 +32,9 @@
 #define ARENA_WIDTH 25
 #define ARENA_HEIGHT 12
 
+#define WINDOW_TITLE "robotfindskitten"
+#define WINDOW_TITLE_SHORT "rfk"
+
 const int amount_of_random_stuff = 15;
 
 typedef enum {
@@ -58,7 +61,7 @@ gboolean *used = NULL;
 GdkPixbuf *robot_pic, *love_pic, *kitten_pic;
 
 const GdkColor black = { 0, };
-GdkColor grey = { 0, 0x8888, 0x8888, 0x8888 };
+GdkColor grey = { 0, 0x3333, 0x3333, 0x3333 };
 
 /****************************************************************/
 /* Random object descriptions.                                  */
@@ -317,11 +320,13 @@ mce_filter_func (DBusConnection * connection,
         {		
           portrait_mode = TRUE;
           hildon_gtk_window_set_portrait_flags (GTK_WINDOW (window), HILDON_PORTRAIT_MODE_REQUEST|HILDON_PORTRAIT_MODE_SUPPORT);
+	  gtk_window_set_title (GTK_WINDOW (window), WINDOW_TITLE_SHORT);
         }
       else
         {
           portrait_mode = FALSE;
           hildon_gtk_window_set_portrait_flags (GTK_WINDOW (window), HILDON_PORTRAIT_MODE_SUPPORT);
+	  gtk_window_set_title (GTK_WINDOW (window), WINDOW_TITLE);
         }
     }
   else
@@ -834,6 +839,38 @@ set_up_board (void)
     }
 }
 
+static gboolean
+backdrop_draw (GtkWidget *widget, GdkEventExpose *event, gpointer data)
+{
+  GdkGC *gc = NULL;
+  int quarter_width = event->area.width / 4;
+  int quarter_height = event->area.height / 4;
+
+  gc = gdk_gc_new (GDK_DRAWABLE (widget->window));
+  gdk_gc_set_foreground (gc, &grey);
+  gdk_draw_rectangle (GDK_DRAWABLE (widget->window),
+		  gc,
+		  TRUE,
+		  quarter_width, 0,
+		  quarter_width*2, quarter_height);
+   gdk_draw_rectangle (GDK_DRAWABLE (widget->window),
+		  gc,
+		  TRUE,
+		  quarter_width, quarter_height*3,
+		  quarter_width*2, quarter_height);
+   gdk_draw_rectangle (GDK_DRAWABLE (widget->window),
+		  gc,
+		  TRUE,
+		  0, quarter_height,
+		  quarter_width, quarter_height*2);
+   gdk_draw_rectangle (GDK_DRAWABLE (widget->window),
+		  gc,
+		  TRUE,
+		  quarter_width*3, quarter_height,
+		  quarter_width, quarter_height*2);
+  return FALSE;
+}
+
 static void
 set_up_widgets (void)
 {
@@ -856,7 +893,7 @@ set_up_widgets (void)
   /* The window */
 
   window = hildon_window_new ();
-  gtk_window_set_title (GTK_WINDOW (window), "robotfindskitten");
+  gtk_window_set_title (GTK_WINDOW (window), WINDOW_TITLE);
   gtk_widget_modify_bg (window, GTK_STATE_NORMAL, &black);
   g_signal_connect (G_OBJECT (window), "button-press-event", G_CALLBACK (on_window_clicked), NULL);
   g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (on_key_pressed), NULL);
@@ -925,13 +962,24 @@ set_up_widgets (void)
   state_widget[STATE_PROLOGUE] = intro;
 
   /* The game itself */
-
   state_widget[STATE_PLAYING] = gtk_table_new (ARENA_HEIGHT, ARENA_WIDTH, TRUE);
   g_signal_connect (state_widget[STATE_PLAYING], "parent-set", G_CALLBACK (set_up_board), NULL);
 
   for (x=0; x < ARENA_WIDTH; x++)
     for (y=0; y < ARENA_HEIGHT; y++)
       arena[x][y] = NULL;
+  
+//  GtkWidget *backdrop = gtk_drawing_area_new ();
+  if (1)
+  g_signal_connect (G_OBJECT (state_widget[STATE_PLAYING]),
+		  "expose_event",
+		  G_CALLBACK (backdrop_draw), NULL);
+  /*
+  gtk_table_attach_defaults (GTK_TABLE (state_widget[STATE_PLAYING]),
+			     backdrop,
+			     0, 10,
+			     0, 10);
+			     */
 
   /* The epilogue */
   state_widget[STATE_EPILOGUE] =  gtk_drawing_area_new ();
