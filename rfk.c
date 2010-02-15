@@ -57,6 +57,7 @@ GtkWidget *window, *robot, *kitten;
 int robot_x, robot_y;
 int robot_demo_x=-1, robot_demo_y=-1;
 gboolean *used = NULL;
+gboolean demo_running = FALSE;
 
 GdkPixbuf *robot_pic, *love_pic, *kitten_pic;
 
@@ -768,6 +769,14 @@ on_key_pressed (GtkWidget      *widget,
 static void
 play_game (gpointer button, gpointer data)
 {
+  demo_running = FALSE;
+  switch_state (STATE_PLAYING);
+}
+
+static void
+play_demo (gpointer button, gpointer data)
+{
+  demo_running = TRUE;
   switch_state (STATE_PLAYING);
 }
 
@@ -925,7 +934,13 @@ set_up_widgets (void)
 					     HILDON_BUTTON_ARRANGEMENT_HORIZONTAL,
 					     "Play", NULL);
   g_signal_connect (button, "clicked", G_CALLBACK (play_game), NULL);
+  gtk_box_pack_end (GTK_BOX (buttons), button, TRUE, TRUE, 0);
 
+
+  button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_THUMB_HEIGHT,
+					     HILDON_BUTTON_ARRANGEMENT_HORIZONTAL,
+					     "Demo", NULL);
+  g_signal_connect (button, "clicked", G_CALLBACK (play_demo), NULL);
   gtk_box_pack_end (GTK_BOX (buttons), button, TRUE, TRUE, 0);
 
   button = hildon_button_new_with_text (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_THUMB_HEIGHT,
