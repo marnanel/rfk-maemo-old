@@ -35,6 +35,8 @@
 #define WINDOW_TITLE "robotfindskitten"
 #define WINDOW_TITLE_SHORT "rfk"
 
+#define DEMO_SPEED 200
+
 const int amount_of_random_stuff = 15;
 
 typedef enum {
@@ -616,11 +618,14 @@ item_is_investigatable (guint8 x, guint8 y)
   return TRUE;
 }
 
-static void
-move_robot_demo (void)
+static gboolean
+move_robot_demo (gpointer dummy)
 {
   gint8 whichway;
   gint8 dx, dy;
+
+  if (current_state!=STATE_PLAYING)
+    return FALSE;
 
   if (robot_demo_x == -1)
     {
@@ -661,6 +666,8 @@ move_robot_demo (void)
     {
       move_robot (whichway);
     }
+
+  return TRUE;
 }
 
 /****************************************************************/
@@ -760,7 +767,7 @@ on_key_pressed (GtkWidget      *widget,
     }
   else if (keyval=='d')
     {
-      move_robot_demo ();
+      move_robot_demo (NULL);
     }
 
   return FALSE;
@@ -777,6 +784,7 @@ static void
 play_demo (gpointer button, gpointer data)
 {
   demo_running = TRUE;
+  g_timeout_add (DEMO_SPEED, move_robot_demo, NULL);
   switch_state (STATE_PLAYING);
 }
 
