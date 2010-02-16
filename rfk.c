@@ -29,8 +29,8 @@
         "path='"      MCE_SIGNAL_PATH "'," \
         "interface='" MCE_SIGNAL_IF   "'"
 
-#define ARENA_WIDTH 25
-#define ARENA_HEIGHT 12
+#define ARENA_WIDTH 30
+#define ARENA_HEIGHT 16
 
 #define WINDOW_TITLE "robotfindskitten"
 #define WINDOW_TITLE_SHORT "rfk"
@@ -619,6 +619,7 @@ item_is_investigatable (guint8 x, guint8 y)
 {
   GObject *item = G_OBJECT (arena[x][y]);
 
+  /* FIXME make sure this doesn't trigger on robot! */
   if (g_object_get_data (item, "examine")==NULL)
     /* Empty space */
     return FALSE;
@@ -642,7 +643,6 @@ move_robot_demo (gpointer dummy)
   if (robot_demo_x == -1)
     {
       /* Find an item to investigate. */
-      /* STUB: randomise robot_demo_x & y*/
 
       robot_demo_x = robot_demo_y = 0;
 
@@ -843,13 +843,14 @@ set_up_board (void)
       used = g_malloc0 (nki_count * sizeof(gboolean));
 
       robot = gtk_label_new ("#");
+      /* make sure robot doesn't try to visit itself */
+      g_object_set_data (G_OBJECT (robot), "visited", "");
       g_object_ref (robot);
       kitten = random_character ("You found kitten!  Way to go, robot!");
       g_object_ref (kitten);
 
       place_in_arena_randomly (robot);
       place_in_arena_randomly (kitten);
-      gtk_widget_modify_bg (kitten, GTK_STATE_NORMAL, &grey);
 
       if (nki_count < amount_of_random_stuff)
 	{
