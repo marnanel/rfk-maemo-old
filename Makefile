@@ -23,3 +23,4 @@ install: rfk rfk.png rfk-robot.png rfk-love.png rfk-kitten.png rfk.desktop non-k
 	install rfk-kitten.png ${DESTDIR}/opt/rfk
 	install non-kitten-items.rfk ${DESTDIR}/opt/rfk
 	install help.html ${DESTDIR}/opt/rfk
+	install help-board.png ${DESTDIR}/opt/rfk
