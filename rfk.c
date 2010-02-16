@@ -1005,17 +1005,9 @@ set_up_widgets (void)
     for (y=0; y < ARENA_HEIGHT; y++)
       arena[x][y] = NULL;
   
-//  GtkWidget *backdrop = gtk_drawing_area_new ();
-  if (1)
   g_signal_connect (G_OBJECT (state_widget[STATE_PLAYING]),
 		  "expose_event",
 		  G_CALLBACK (backdrop_draw), NULL);
-  /*
-  gtk_table_attach_defaults (GTK_TABLE (state_widget[STATE_PLAYING]),
-			     backdrop,
-			     0, 10,
-			     0, 10);
-			     */
 
   /* The epilogue */
   state_widget[STATE_EPILOGUE] =  gtk_drawing_area_new ();
