@@ -149,6 +149,14 @@ random_character (gchar *description)
 /* Talking back to the user.                                    */
 /****************************************************************/
 
+static gboolean
+close_dialogue (gpointer data)
+{
+  GtkDialog *dialogue = (GtkDialog*) data;
+  gtk_dialog_response (dialogue, GTK_RESPONSE_ACCEPT);
+  return FALSE; /* don't go round again */
+}
+
 static void
 show_message (const char *message)
 {
@@ -156,6 +164,10 @@ show_message (const char *message)
     (hildon_note_new_information (GTK_WINDOW (window),
 				  message?message:
 				  "Some message was supposed to be here."));
+  if (demo_running)
+    {
+      g_timeout_add (1000, close_dialogue, note);
+    }
   gtk_dialog_run (GTK_DIALOG (note));
   gtk_widget_destroy (GTK_WIDGET (note));
 }
