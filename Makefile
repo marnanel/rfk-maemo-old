@@ -3,7 +3,7 @@
 all: rfk
 
 rfk: rfk.c
-	gcc -Wall -g rfk.c -o rfk `pkg-config --cflags --libs gtk+-2.0 hildon-1 dbus-glib-1 dbus-1`
+	gcc -Wall -g rfk.c -o rfk `pkg-config --cflags --libs gtk+-2.0 hildon-1 dbus-glib-1 dbus-1 libgtkhtml-2.0`
 
 clean:
 	rm -f rfk

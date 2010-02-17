@@ -2,7 +2,7 @@ Source: rfk
 Section: user/games
 Priority: extra
 Maintainer: Thomas Thurman <tthurman@gnome.org>
-Build-Depends: debhelper (>= 5), libhildon1-dev, libdbus-glib-1-dev, libdbus-1-dev
+Build-Depends: debhelper (>= 5), libhildon1-dev, libdbus-glib-1-dev, libdbus-1-dev, libgtkhtml2-dev
 Standards-Version: 3.7.2
 
 Package: rfk

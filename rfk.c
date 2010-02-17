@@ -15,6 +15,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <gtk/gtk.h>
+#include <libgtkhtml/gtkhtml.h>
 #include <stdlib.h>
 #include <glib.h>
 #include <hildon/hildon.h>
@@ -288,12 +289,38 @@ call_dbus (DBusBusType type,
 static gboolean
 get_help (gpointer button, gpointer data)
 {
-  call_dbus (DBUS_BUS_SESSION,
-	     "com.nokia.osso_browser",
-	     "/com/nokia/osso_browser/request",
-	     "com.nokia.osso_browser",
-	     "load_url",
-	     "/opt/rfk/help.html");
+  GtkWidget *window = hildon_stackable_window_new ();
+  static gchar *contents = NULL;
+  static HtmlDocument *doc = NULL;
+  GtkWidget *pan = NULL;
+  GtkWidget *html = NULL;
+
+  if (!contents &&
+      !g_file_get_contents ("/opt/rfk/help.html",
+        &contents,
+        NULL, NULL))
+    {
+      show_message ("Sorry, the help could not be displayed.");
+      g_free (window);
+      return FALSE;
+    }
+
+  if (!doc)
+    {
+      doc = html_document_new ();
+      html_document_open_stream (doc, "text/html");
+      html_document_write_stream (doc, contents, -1);
+      html_document_close_stream (doc);
+    }
+
+  html = html_view_new ();
+  g_object_set(G_OBJECT(html), "sensitive", FALSE, NULL);
+  html_view_set_document (HTML_VIEW (html), doc);
+  pan = hildon_pannable_area_new ();
+  gtk_container_add (GTK_CONTAINER (pan), html);
+  gtk_container_add (GTK_CONTAINER (window), pan);
+  gtk_window_set_title (GTK_WINDOW (window), WINDOW_TITLE " help");
+  gtk_widget_show_all (window);
   return FALSE;
 }
 
@@ -922,7 +949,7 @@ set_up_widgets (void)
   
   /* The window */
 
-  window = hildon_window_new ();
+  window = hildon_stackable_window_new ();
   gtk_window_set_title (GTK_WINDOW (window), WINDOW_TITLE);
   gtk_widget_modify_bg (window, GTK_STATE_NORMAL, &black);
   g_signal_connect (G_OBJECT (window), "button-press-event", G_CALLBACK (on_window_clicked), NULL);
