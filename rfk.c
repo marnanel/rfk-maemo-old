@@ -286,6 +286,28 @@ call_dbus (DBusBusType type,
 		  G_TYPE_INVALID);
 }
 
+/*
+ * Online help, such as it is.
+ */
+static void
+help_supply_image (gpointer html_dummy,
+		const char *url,
+		HtmlStream *stream,
+		gpointer data_dummy)
+{
+	gchar *img;
+	guint size;
+	
+     if (g_file_get_contents (url,
+			     &img, &size, NULL))
+       {
+	  html_stream_write (stream, img, size);
+	  g_free (img);
+       }
+
+     html_stream_close (stream);
+}
+
 static gboolean
 get_help (gpointer button, gpointer data)
 {
@@ -308,12 +330,14 @@ get_help (gpointer button, gpointer data)
   if (!doc)
     {
       doc = html_document_new ();
+      g_signal_connect (G_OBJECT (doc), "request-url", G_CALLBACK (help_supply_image), NULL);
       html_document_open_stream (doc, "text/html");
       html_document_write_stream (doc, contents, -1);
       html_document_close_stream (doc);
     }
 
   html = html_view_new ();
+  g_signal_connect (G_OBJECT (html), "request-url", G_CALLBACK (help_supply_image), NULL);
   g_object_set(G_OBJECT(html), "sensitive", FALSE, NULL);
   html_view_set_document (HTML_VIEW (html), doc);
   pan = hildon_pannable_area_new ();
