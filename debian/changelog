@@ -1,3 +1,23 @@
+rfk (1.41-1) unstable; urgency=low
+
+  * Added link to bugtracker
+  * Added display name
+  * Fixed debian/control icon
+
+ -- Thomas Thurman <tthurman@gnome.org>  Wed, 17 Feb 2010 22:23:00 -0400
+
+rfk (1.40-1) unstable; urgency=low
+
+  * Screen tapping works more sensibly
+  * Chequers added to screen to show where to tap
+  * Demo mode
+  * Portrait mode support
+  * Help is in-process, not via spawning the browser
+  * Made board slightly larger
+  * Added kitten to front screen
+
+ -- Thomas Thurman <tthurman@gnome.org>  Wed, 17 Feb 2010 21:48:00 -0400
+
 rfk (1.32-1) unstable; urgency=low
 
   * Added icon to debian/control
